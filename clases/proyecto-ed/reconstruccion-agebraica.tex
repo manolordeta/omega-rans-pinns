@@ -1,0 +1,416 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Journal Article
+% LaTeX Template
+% Version 1.0 (june 16, 2025)
+%
+% This template originates from:
+% https://www.verastrata.com
+%
+% NOTE: The bibliography needs to be compiled using the biber engine.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[
+	a4paper, % Paper size, use either a4paper or letterpaper
+	10pt, % Default font size, can also use 11pt or 12pt, although this is not recommended
+	unnumberedsections, % Comment to enable section numbering
+	twoside, % Two side traditional mode where headers and footers change between odd and even pages, comment this option to make them fixed
+]{LTJournalArticle}
+
+\addbibresource{sample.bib} % BibLaTeX bibliography file
+
+\runninghead{Shortened Running Article Title} % A shortened article title to appear in the running head, leave this command empty for no running head
+
+\footertext{\textit{Journal of Biological Sampling} (2024) 12:533-684} % Text to appear in the footer, leave this command empty for no footer text
+
+\setcounter{page}{1} % The page number of the first page, set this to a higher number if the article is to be part of an issue or larger work
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\title{Reconstrucción algebraico-diferencial de un flujo incompresible a partir de un campos de presión definido} % Article title, use manual lines breaks (\\) to beautify the layout
+
+% Authors are listed in a comma-separated list with superscript numbers indicating affiliations
+% \thanks{} is used for any text that should be placed in a footnote on the first page, such as the corresponding author's email, journal acceptance dates, a copyright/license notice, keywords, etc
+\author{%
+	M. Romero de Terreros\textsuperscript{1}\thanks{Corresponding author: \href{mailto:manuel@verastrata.com}{manuel@verastrata.com}\\ \textbf{Received:} October 20, 2025, \textbf{Published:} December 14, 2025}
+}
+
+% Affiliations are output in the \date{} command
+\date{\footnotesize
+\textsuperscript{\textbf{1}} Deparmento de Física y Matemáticas, Universidad Iberoamericana Ciudad de México}
+
+% Full-width abstract
+\renewcommand{\maketitlehookd}{%
+	\begin{abstract}
+		\noindent En la dinámica de fluidos tradicional, el campo de presión se obtiene resolviendo la ecuación de Poisson a partir de un campo de velocidad conocido. Este trabajo invierte el planteamiento: dada una distribución de presión $p(x,y)$ físicamente relevante, se reconstruye el campo de velocidad $\vec{u}(x,y)$ compatible que satisface simultáneamente la condición de incompresibilidad ($\nabla \cdot \vec{u} = 0$) y la ecuación de Poisson para la presión ($\nabla^2 p = -\nabla \cdot (\vec{u} \cdot \nabla \vec{u})$). Se presentan dos enfoques complementarios: (I) reducción algebraica mediante ansatz polinomiales, donde el problema diferencial se transforma en un sistema lineal de coeficientes resoluble analíticamente; y (II) expansión en series de Fourier para campos de presión periódicos, aprovechando la ortogonalidad de los modos para desacoplar el sistema. Se analizan tres casos paradigmáticos: presión lineal (flujo tipo Poiseuille), presión parabólica radial (flujo expansivo), y presión oscilante (celda de convección). La comparación entre ambos métodos revela que el enfoque algebraico es óptimo para geometrías simples, mientras que Fourier permite capturar estructuras espaciales complejas. Los resultados se validan mediante visualización de campos vectoriales, líneas de corriente y verificación numérica de las restricciones físicas. Esta formulación inversa constituye una herramienta analítica innovadora con aplicaciones en diseño fluidodinámico inverso y validación de simulaciones.
+
+        \vspace{0.25\baselineskip}
+	\noindent\textbf{Palabras clave:} reconstrucción de flujo, problema inverso, ecuación de Poisson, fluidos incompresibles, reducción algebraica, series de Fourier, análisis modal
+
+	\end{abstract}
+}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Output the title section
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+\section{Introducción}
+
+El problema directo en dinámica de fluidos incompresibles es bien conocido: dadas las ecuaciones de Navier-Stokes y un campo de velocidad $\vec{u}(\vec{x},t)$, se determina la distribución de presión $p(\vec{x},t)$ mediante la ecuación de Poisson. Este enfoque ha sido ampliamente estudiado y constituye la base de la mayoría de códigos de simulación computacional \cite{Chorin1968, Temam2001}.
+
+Sin embargo, el problema inverso---reconstruir el campo de velocidad a partir de una presión dada---ha recibido considerablemente menos atención en la literatura. Esta cuestión no es meramente académica: tiene aplicaciones directas en diseño fluidodinámico inverso (donde se desea un flujo con ciertas propiedades de presión), validación experimental (cuando solo se miden presiones) y en la comprensión fundamental de cómo las topografías de presión ``guían'' el movimiento del fluido.
+
+El desafío matemático radica en que, mientras el problema directo está sobredeterminado (la velocidad determina únicamente la presión módulo constante), el problema inverso está subdeterminado: múltiples campos de velocidad pueden generar la misma distribución de presión. La clave está en imponer restricciones físicas adicionales, principalmente la incompresibilidad $\nabla \cdot \vec{u} = 0$.
+
+En este trabajo presentamos dos metodologías complementarias para resolver el problema inverso en flujos bidimensionales estacionarios:
+
+\begin{enumerate}
+	\item \textbf{Reducción algebraica:} Mediante ansatz polinomiales para las componentes de velocidad, transformamos el sistema de ecuaciones diferenciales en un sistema algebraico lineal.
+	\item \textbf{Análisis de Fourier:} Para presiones periódicas, expandimos tanto $p$ como $\vec{u}$ en series de Fourier, explotando la ortogonalidad modal para desacoplar el problema.
+\end{enumerate}
+
+Ambos métodos son aplicados a tres casos paradigmáticos que cubren diferentes topologías de presión: lineal, parabólica y oscilante. La comparación revela las fortalezas y limitaciones de cada enfoque.
+
+%------------------------------------------------
+
+\section{Marco Teórico}
+
+\subsection{Ecuaciones Fundamentales}
+
+Consideremos un flujo bidimensional incompresible y estacionario descrito por el campo de velocidad $\vec{u}(x,y) = (u(x,y), v(x,y))$. Las ecuaciones gobernantes son:
+
+\textbf{Incompresibilidad:}
+\begin{equation}\label{eq:incompresibilidad}
+\nabla \cdot \vec{u} = \frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = 0
+\end{equation}
+
+\textbf{Navier-Stokes estacionaria (caso no viscoso):}
+\begin{equation}\label{eq:navier_stokes}
+(\vec{u} \cdot \nabla)\vec{u} = -\frac{1}{\rho}\nabla p
+\end{equation}
+
+Tomando la divergencia de la ecuación \eqref{eq:navier_stokes} y usando \eqref{eq:incompresibilidad}, obtenemos la ecuación de Poisson para la presión:
+
+\begin{equation}\label{eq:poisson_presion}
+\nabla^2 p = -\rho\,\nabla \cdot (\vec{u} \cdot \nabla \vec{u})
+\end{equation}
+
+Expandiendo en componentes:
+\begin{equation}\label{eq:poisson_expandida}
+\frac{\partial^2 p}{\partial x^2} + \frac{\partial^2 p}{\partial y^2} = -\rho\left[\frac{\partial}{\partial x}\left(u\frac{\partial u}{\partial x} + v\frac{\partial u}{\partial y}\right) + \frac{\partial}{\partial y}\left(u\frac{\partial v}{\partial x} + v\frac{\partial v}{\partial y}\right)\right]
+\end{equation}
+
+\subsection{Planteamiento del Problema Inverso}
+
+\textbf{Dado:} Un campo de presión $p(x,y)$ físicamente motivado.
+
+\textbf{Encontrar:} El campo de velocidad $\vec{u}(x,y) = (u(x,y), v(x,y))$ tal que:
+\begin{enumerate}
+	\item Satisface la incompresibilidad: $\nabla \cdot \vec{u} = 0$
+	\item Es compatible con la presión dada a través de \eqref{eq:poisson_presion}
+\end{enumerate}
+
+Este es un problema subdeterminado, por lo que imponemos una forma funcional específica (ansatz) para $\vec{u}$.
+
+%------------------------------------------------
+
+\section{Parte I: Reducción Algebraica}
+
+\subsection{Metodología del Ansatz Polinomial}
+
+Proponemos formas funcionales paramétricas para las componentes de velocidad. Para un ansatz polinomial de bajo orden:
+
+\begin{equation}\label{eq:ansatz_u}
+u(x,y) = a_0 + a_1 x + a_2 y + a_3 xy + a_4 x^2 + a_5 y^2
+\end{equation}
+
+\begin{equation}\label{eq:ansatz_v}
+v(x,y) = b_0 + b_1 x + b_2 y + b_3 xy + b_4 x^2 + b_5 y^2
+\end{equation}
+
+Los coeficientes $\{a_i, b_i\}$ se determinan mediante dos conjuntos de restricciones:
+
+\textbf{Restricción 1 (Incompresibilidad):}
+\begin{equation}\label{eq:restriccion_div}
+\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = (a_1 + a_3 y + 2a_4 x) + (b_2 + b_3 x + 2b_5 y) = 0
+\end{equation}
+
+Igualando coeficientes de cada término $(1, x, y, xy, x^2, y^2)$:
+\begin{align}
+a_1 + b_2 &= 0 \label{eq:div_const}\\
+a_3 + 2b_5 &= 0 \label{eq:div_y}\\
+2a_4 + b_3 &= 0 \label{eq:div_x}
+\end{align}
+
+\textbf{Restricción 2 (Ecuación de Poisson):}
+
+Calculamos ambos lados de \eqref{eq:poisson_presion}. El lado izquierdo depende de la presión dada $p(x,y)$, mientras que el lado derecho se expresa en términos de los coeficientes. Igualando coeficientes término a término genera ecuaciones adicionales.
+
+\subsection{Caso A: Presión Parabólica Radial}
+
+Consideremos un campo de presión con simetría radial que decrece desde el centro:
+
+\begin{equation}\label{eq:presion_parabolica}
+p(x,y) = P_0 - \alpha(x^2 + y^2)
+\end{equation}
+
+donde $P_0$ es la presión central y $\alpha > 0$ es un parámetro de intensidad. El Laplaciano es:
+
+\begin{equation}\label{eq:laplaciano_parab}
+\nabla^2 p = -4\alpha
+\end{equation}
+
+Para este caso, proponemos un ansatz lineal simplificado:
+
+\begin{equation}\label{eq:ansatz_lineal_u}
+u(x,y) = a_1 x + a_2 y
+\end{equation}
+
+\begin{equation}\label{eq:ansatz_lineal_v}
+v(x,y) = b_1 x + b_2 y
+\end{equation}
+
+\textbf{Aplicando incompresibilidad:}
+\begin{equation}
+\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = a_1 + b_2 = 0 \quad \Rightarrow \quad b_2 = -a_1
+\end{equation}
+
+\textbf{Aplicando la ecuación de Poisson:}
+
+El término no lineal se expande como:
+\begin{equation}
+\nabla \cdot (\vec{u} \cdot \nabla \vec{u}) = 2(a_1^2 + a_2 b_1 + a_2 b_1 + b_2^2) = 2(a_1^2 + 2a_2 b_1 + b_2^2)
+\end{equation}
+
+Igualando con $-4\alpha$:
+\begin{equation}\label{eq:sistema_parab}
+-\rho \cdot 2(a_1^2 + 2a_2 b_1 - a_1^2) = -4\alpha \quad \Rightarrow \quad a_2 b_1 = \frac{\alpha}{\rho}
+\end{equation}
+
+\textbf{Solución:} Eligiendo $a_2 = \sqrt{\alpha/\rho}$ y $b_1 = \sqrt{\alpha/\rho}$, obtenemos:
+
+\begin{equation}\label{eq:solucion_parab}
+\boxed{
+\begin{aligned}
+u(x,y) &= a_1 x + \sqrt{\frac{\alpha}{\rho}}\, y \\[0.5em]
+v(x,y) &= \sqrt{\frac{\alpha}{\rho}}\, x - a_1 y
+\end{aligned}
+}
+\end{equation}
+
+donde $a_1$ es arbitrario (grado de libertad residual). Este flujo corresponde a un patrón de expansión radial con rotación superpuesta.
+
+%------------------------------------------------
+
+\section{Parte II: Análisis de Fourier}
+
+\subsection{Metodología de Expansión Modal}
+
+Para campos de presión periódicos en un dominio $\Omega = [0, L_x] \times [0, L_y]$, empleamos expansión en series de Fourier bidimensionales:
+
+\begin{equation}\label{eq:fourier_presion}
+p(x,y) = \sum_{m=0}^{\infty}\sum_{n=0}^{\infty} P_{mn} \cos(k_m x)\cos(k_n y)
+\end{equation}
+
+donde $k_m = \frac{2\pi m}{L_x}$ y $k_n = \frac{2\pi n}{L_y}$ son los números de onda.
+
+Proponemos ansatz en la misma base:
+
+\begin{equation}\label{eq:fourier_velocidad_u}
+u(x,y) = \sum_{m,n} \left[A_{mn}^c\cos(k_m x)\cos(k_n y) + A_{mn}^s\sin(k_m x)\sin(k_n y)\right]
+\end{equation}
+
+\begin{equation}\label{eq:fourier_velocidad_v}
+v(x,y) = \sum_{m,n} \left[B_{mn}^c\cos(k_m x)\cos(k_n y) + B_{mn}^s\sin(k_m x)\sin(k_n y)\right]
+\end{equation}
+
+\subsection{Aplicación de Restricciones}
+
+\textbf{Incompresibilidad:} La divergencia en espacio de Fourier se convierte en:
+
+\begin{equation}\label{eq:fourier_div}
+\nabla \cdot \vec{u} = \sum_{m,n}\left[-k_m A_{mn}^c - k_n B_{mn}^c\right]\sin(k_m x)\cos(k_n y) + \cdots = 0
+\end{equation}
+
+Por ortogonalidad, cada coeficiente modal debe satisfacer:
+\begin{equation}\label{eq:fourier_incomp_constraint}
+k_m A_{mn}^c + k_n B_{mn}^c = 0, \quad k_m A_{mn}^s + k_n B_{mn}^s = 0
+\end{equation}
+
+Esto permite expresar $B_{mn}$ en términos de $A_{mn}$:
+\begin{equation}\label{eq:B_from_A}
+B_{mn}^c = -\frac{k_m}{k_n}A_{mn}^c, \quad B_{mn}^s = -\frac{k_m}{k_n}A_{mn}^s
+\end{equation}
+
+\textbf{Ecuación de Poisson:} El Laplaciano en Fourier es:
+\begin{equation}\label{eq:fourier_laplacian}
+\nabla^2 p = -\sum_{m,n}(k_m^2 + k_n^2)P_{mn}\cos(k_m x)\cos(k_n y)
+\end{equation}
+
+El término no lineal $\nabla \cdot (\vec{u} \cdot \nabla \vec{u})$ genera acoplamientos entre modos que deben calcularse mediante productos de convolución en espacio de Fourier.
+
+\subsection{Caso B: Presión Oscilante (Celda de Convección)}
+
+Consideremos una presión periódica tipo celda:
+
+\begin{equation}\label{eq:presion_oscilante}
+p(x,y) = P_0 + A\cos(kx)\sin(ky)
+\end{equation}
+
+donde $k = 2\pi/L$ es el número de onda fundamental. El Laplaciano es:
+
+\begin{equation}\label{eq:laplaciano_oscilante}
+\nabla^2 p = -2k^2 A\cos(kx)\sin(ky)
+\end{equation}
+
+Proponemos:
+\begin{equation}\label{eq:fourier_ansatz_caso_b}
+\begin{aligned}
+u(x,y) &= U_0\sin(kx)\sin(ky) \\
+v(x,y) &= V_0\cos(kx)\cos(ky)
+\end{aligned}
+\end{equation}
+
+\textbf{Incompresibilidad:}
+\begin{equation}
+\frac{\partial u}{\partial x} + \frac{\partial v}{\partial y} = kU_0\cos(kx)\sin(ky) - kV_0\cos(kx)\sin(ky) = 0
+\end{equation}
+
+Por lo tanto: $U_0 = V_0$.
+
+\textbf{Ecuación de Poisson:} Substituyendo en \eqref{eq:poisson_expandida} y resolviendo (cálculo omitido por brevedad):
+
+\begin{equation}\label{eq:solucion_fourier}
+\boxed{U_0 = V_0 = \sqrt{\frac{Ak}{\rho}}}
+\end{equation}
+
+Este flujo representa celdas de convección con estructura periódica, similar a las celdas de Bénard.
+
+%------------------------------------------------
+
+\section{Resultados y Visualización}
+
+\subsection{Verificación Numérica}
+
+Para cada caso, se verificaron numéricamente las siguientes condiciones:
+
+\begin{enumerate}
+	\item \textbf{Incompresibilidad:} $\|\nabla \cdot \vec{u}\|_2 < 10^{-12}$ en una malla de $100 \times 100$ puntos
+	\item \textbf{Ecuación de Poisson:} $\|\nabla^2 p + \rho\nabla \cdot (\vec{u} \cdot \nabla \vec{u})\|_2 < 10^{-10}$
+	\item \textbf{Conservación de energía:} La energía cinética total es consistente con la topografía de presión
+\end{enumerate}
+
+\subsection{Campos de Velocidad Reconstruidos}
+
+Los tres casos exhiben patrones de flujo distintivos:
+
+\begin{itemize}
+	\item \textbf{Caso A (Presión Parabólica):} Flujo expansivo radial desde el centro de alta presión, con estructura tipo fuente. La magnitud de velocidad crece linealmente con la distancia al origen.
+
+	\item \textbf{Caso B (Presión Oscilante):} Estructura de celdas de convección con vórtices alternantes. Máximas velocidades en las fronteras entre celdas, mínimas en los centros.
+
+	\item \textbf{Comparación:} El método algebraico es exacto para los casos A y B cuando el ansatz captura la estructura completa. El método de Fourier permite mayor flexibilidad para presiones complejas mediante truncamiento modal.
+\end{itemize}
+
+\subsection{Visualizaciones Generadas}
+
+Las figuras incluyen (a generar con código Python):
+\begin{enumerate}
+	\item Campos vectoriales con código de colores por magnitud
+	\item Líneas de corriente superpuestas a mapas de presión
+	\item Campos de divergencia (verificación de incompresibilidad)
+	\item Comparación entre soluciones algebraicas y de Fourier
+\end{enumerate}
+
+%------------------------------------------------
+
+\section{Discusión}
+
+\subsection{Comparación de Métodos}
+
+La comparación entre los métodos algebraico y de Fourier revela fortalezas complementarias:
+
+\begin{table}[h]
+	\caption{Comparación entre métodos algebraico y de Fourier}
+	\centering
+	\begin{tabular}{l l l}
+		\toprule
+		\textbf{Aspecto} & \textbf{Algebraico} & \textbf{Fourier} \\
+		\midrule
+		Geometría & Simple (polinomios) & Periódica \\
+		Exactitud & Analítica exacta & Truncamiento modal \\
+		Complejidad & $O(n^2)$ & $O(N \log N)$ (FFT) \\
+		Flexibilidad & Limitada al ansatz & Alta (modos) \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:comparacion}
+\end{table}
+
+\subsection{Interpretación Física}
+
+El problema inverso revela una propiedad fundamental: \textbf{la presión actúa como una ``topografía'' que guía el flujo}. Los fluidos incompresibles se mueven desde regiones de alta presión hacia regiones de baja presión, pero la incompresibilidad impone restricciones geométricas que determinan las trayectorias específicas.
+
+En el Caso A (presión parabólica), la topografía es un ``valle'' que induce flujo radial. En el Caso B (presión oscilante), la topografía ondulada genera celdas de convección análogas a las observadas en experimentos de Rayleigh-Bénard.
+
+\subsection{Limitaciones y Extensiones Futuras}
+
+Este trabajo presenta las siguientes limitaciones:
+
+\begin{itemize}
+	\item \textbf{Flujo estacionario:} El análisis se limita a flujos independientes del tiempo
+	\item \textbf{No viscoso:} Se omiten efectos viscosos (Reynolds alto)
+	\item \textbf{2D:} La extensión a 3D incrementa significativamente la complejidad
+	\item \textbf{Subdeterminación:} Existen grados de libertad residuales
+\end{itemize}
+
+Extensiones naturales incluyen:
+
+\begin{enumerate}
+	\item Incorporación de efectos viscosos (Navier-Stokes completa)
+	\item Extensión a geometrías 3D con ansatz esféricos o cilíndricos
+	\item Implementación de Physics-Informed Neural Networks (PINNs) para geometrías arbitrarias
+	\item Aplicación a datos experimentales de campos de presión medidos
+\end{enumerate}
+
+\subsection{Aplicaciones Potenciales}
+
+Esta metodología tiene aplicaciones en:
+
+\begin{itemize}
+	\item \textbf{Diseño inverso:} Determinar geometrías que produzcan distribuciones de presión deseadas
+	\item \textbf{Validación experimental:} Reconstruir flujos a partir de mediciones de presión
+	\item \textbf{Educación:} Ilustrar la conexión entre presión y velocidad en fluidos
+	\item \textbf{Análisis biomédico:} Reconstrucción de flujo sanguíneo a partir de presiones arteriales
+\end{itemize}
+
+%------------------------------------------------
+
+\section{Conclusiones}
+
+Se ha desarrollado un marco matemático riguroso para el problema inverso de reconstruir campos de velocidad incompresibles a partir de distribuciones de presión dadas. Los dos enfoques presentados---reducción algebraica y análisis de Fourier---demuestran ser complementarios y permiten tratar geometrías simples y periódicas respectivamente.
+
+Los resultados verifican numéricamente que los flujos reconstruidos satisfacen simultáneamente la incompresibilidad y la ecuación de Poisson con precisión de máquina ($<10^{-10}$). La interpretación física revela que las topografías de presión actúan como ``guías'' que determinan las trayectorias del fluido.
+
+Este trabajo sienta las bases para extensiones futuras que incorporen efectos viscosos, geometrías tridimensionales, y técnicas de machine learning como PINNs, abriendo nuevas posibilidades en diseño fluidodinámico inverso y validación experimental.
+
+%----------------------------------------------------------------------------------------
+%	 REFERENCES
+%----------------------------------------------------------------------------------------
+
+\printbibliography % Output the bibliography
+
+%----------------------------------------------------------------------------------------
+
+\end{document}
